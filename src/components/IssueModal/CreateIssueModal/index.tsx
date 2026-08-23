@@ -8,6 +8,7 @@ import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { RadioGroup } from '@headlessui/react';
 import { ArrowRightCircleIcon } from '@heroicons/react/24/solid';
+import { IssueType } from '@server/constants/issue';
 import { MediaStatus } from '@server/constants/media';
 import type Issue from '@server/entity/Issue';
 import type { MovieDetails } from '@server/models/Movie';
@@ -88,6 +89,38 @@ const CreateIssueModal = ({
     )
     .map((season) => season.seasonNumber);
 
+  const has4kAccess =
+    mediaType === 'movie'
+      ? settings.currentSettings.movie4kEnabled &&
+        hasPermission([Permission.REQUEST_4K, Permission.REQUEST_4K_MOVIE], {
+          type: 'or',
+        })
+      : settings.currentSettings.series4kEnabled &&
+        hasPermission([Permission.REQUEST_4K, Permission.REQUEST_4K_TV], {
+          type: 'or',
+        });
+
+  const isAvailable =
+    data?.mediaInfo?.status === MediaStatus.AVAILABLE ||
+    data?.mediaInfo?.status === MediaStatus.PARTIALLY_AVAILABLE ||
+    (has4kAccess &&
+      (data?.mediaInfo?.status4k === MediaStatus.AVAILABLE ||
+        data?.mediaInfo?.status4k === MediaStatus.PARTIALLY_AVAILABLE));
+
+  const isRequestedOnly =
+    !isAvailable &&
+    (data?.mediaInfo?.status === MediaStatus.PENDING ||
+      data?.mediaInfo?.status === MediaStatus.PROCESSING ||
+      (has4kAccess &&
+        (data?.mediaInfo?.status4k === MediaStatus.PENDING ||
+          data?.mediaInfo?.status4k === MediaStatus.PROCESSING)));
+
+  const availableIssueOptions = issueOptions.filter((option) =>
+    isRequestedOnly
+      ? option.issueType === IssueType.REQUEST
+      : option.issueType !== IssueType.REQUEST
+  );
+
   const CreateIssueModalSchema = Yup.object().shape({
     message: Yup.string().required(
       intl.formatMessage(messages.validationMessageRequired)
@@ -97,7 +130,7 @@ const CreateIssueModal = ({
   return (
     <Formik
       initialValues={{
-        selectedIssue: issueOptions[0],
+        selectedIssue: availableIssueOptions[0],
         message: '',
         problemSeason: availableSeasons.length === 1 ? availableSeasons[0] : 0,
         problemEpisode: 0,
@@ -249,14 +282,14 @@ const CreateIssueModal = ({
                 Select an Issue
               </RadioGroup.Label>
               <div className="-space-y-px overflow-hidden rounded-md bg-gray-800/30">
-                {issueOptions.map((setting, index) => (
+                {availableIssueOptions.map((setting, index) => (
                   <RadioGroup.Option
                     key={`issue-type-${setting.issueType}`}
                     value={setting}
                     className={({ checked }) =>
                       classNames(
                         index === 0 ? 'rounded-tl-md rounded-tr-md' : '',
-                        index === issueOptions.length - 1
+                        index === availableIssueOptions.length - 1
                           ? 'rounded-bl-md rounded-br-md'
                           : '',
                         checked

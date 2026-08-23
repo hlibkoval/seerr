@@ -221,6 +221,7 @@
   "components.IssueModal.CreateIssueModal.whatswrong": "What's wrong?",
   "components.IssueModal.issueAudio": "Audio",
   "components.IssueModal.issueOther": "Other",
+  "components.IssueModal.issueRequest": "Request",
   "components.IssueModal.issueSubtitles": "Subtitle",
   "components.IssueModal.issueVideo": "Video",
   "components.LanguageSelector.languageServerDefault": "Default ({language})",

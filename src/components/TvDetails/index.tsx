@@ -677,13 +677,16 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
           />
           {(data.mediaInfo?.status === MediaStatus.AVAILABLE ||
             data.mediaInfo?.status === MediaStatus.PARTIALLY_AVAILABLE ||
+            data.mediaInfo?.status === MediaStatus.PROCESSING ||
+            data.mediaInfo?.status === MediaStatus.PENDING ||
             (settings.currentSettings.series4kEnabled &&
               hasPermission([Permission.REQUEST_4K, Permission.REQUEST_4K_TV], {
                 type: 'or',
               }) &&
               (data.mediaInfo?.status4k === MediaStatus.AVAILABLE ||
-                data?.mediaInfo?.status4k ===
-                  MediaStatus.PARTIALLY_AVAILABLE))) &&
+                data?.mediaInfo?.status4k === MediaStatus.PARTIALLY_AVAILABLE ||
+                data?.mediaInfo?.status4k === MediaStatus.PROCESSING ||
+                data?.mediaInfo?.status4k === MediaStatus.PENDING))) &&
             hasPermission(
               [Permission.CREATE_ISSUES, Permission.MANAGE_ISSUES],
               {

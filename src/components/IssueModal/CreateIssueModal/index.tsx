@@ -75,12 +75,16 @@ const CreateIssueModal = ({
       (season) =>
         season.status === MediaStatus.AVAILABLE ||
         season.status === MediaStatus.PARTIALLY_AVAILABLE ||
+        season.status === MediaStatus.PROCESSING ||
+        season.status === MediaStatus.PENDING ||
         (settings.currentSettings.series4kEnabled &&
           hasPermission([Permission.REQUEST_4K, Permission.REQUEST_4K_TV], {
             type: 'or',
           }) &&
           (season.status4k === MediaStatus.AVAILABLE ||
-            season.status4k === MediaStatus.PARTIALLY_AVAILABLE))
+            season.status4k === MediaStatus.PARTIALLY_AVAILABLE ||
+            season.status4k === MediaStatus.PROCESSING ||
+            season.status4k === MediaStatus.PENDING))
     )
     .map((season) => season.seasonNumber);
 

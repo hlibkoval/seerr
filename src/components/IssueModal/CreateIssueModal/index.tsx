@@ -9,7 +9,7 @@ import defineMessages from '@app/utils/defineMessages';
 import { Label, Radio, RadioGroup } from '@headlessui/react';
 import { ArrowRightCircleIcon } from '@heroicons/react/24/solid';
 import { IssueType } from '@server/constants/issue';
-import { MediaStatus } from '@server/constants/media';
+import { MediaRequestStatus, MediaStatus } from '@server/constants/media';
 import type Issue from '@server/entity/Issue';
 import type { MovieDetails } from '@server/models/Movie';
 import type { TvDetails } from '@server/models/Tv';
@@ -71,24 +71,6 @@ const CreateIssueModal = ({
     return null;
   }
 
-  const availableSeasons = (data?.mediaInfo?.seasons ?? [])
-    .filter(
-      (season) =>
-        season.status === MediaStatus.AVAILABLE ||
-        season.status === MediaStatus.PARTIALLY_AVAILABLE ||
-        season.status === MediaStatus.PROCESSING ||
-        season.status === MediaStatus.PENDING ||
-        (settings.currentSettings.series4kEnabled &&
-          hasPermission([Permission.REQUEST_4K, Permission.REQUEST_4K_TV], {
-            type: 'or',
-          }) &&
-          (season.status4k === MediaStatus.AVAILABLE ||
-            season.status4k === MediaStatus.PARTIALLY_AVAILABLE ||
-            season.status4k === MediaStatus.PROCESSING ||
-            season.status4k === MediaStatus.PENDING))
-    )
-    .map((season) => season.seasonNumber);
-
   const has4kAccess =
     mediaType === 'movie'
       ? settings.currentSettings.movie4kEnabled &&
@@ -99,6 +81,42 @@ const CreateIssueModal = ({
         hasPermission([Permission.REQUEST_4K, Permission.REQUEST_4K_TV], {
           type: 'or',
         });
+
+  // Seasons the library scanner has actually seen. `mediaInfo.seasons` is only
+  // written once the media exists on the media server, so media that has been
+  // requested but not yet downloaded contributes nothing here.
+  const scannedSeasons = (data?.mediaInfo?.seasons ?? [])
+    .filter(
+      (season) =>
+        season.status === MediaStatus.AVAILABLE ||
+        season.status === MediaStatus.PARTIALLY_AVAILABLE ||
+        season.status === MediaStatus.PROCESSING ||
+        season.status === MediaStatus.PENDING ||
+        (has4kAccess &&
+          (season.status4k === MediaStatus.AVAILABLE ||
+            season.status4k === MediaStatus.PARTIALLY_AVAILABLE ||
+            season.status4k === MediaStatus.PROCESSING ||
+            season.status4k === MediaStatus.PENDING))
+    )
+    .map((season) => season.seasonNumber);
+
+  // Seasons that so far only exist as a request. This is the only source of
+  // season numbers for Pending/Processing media -- which is precisely the case
+  // the Request issue type exists for -- so without it the "Affected Season"
+  // dropdown renders empty there.
+  const requestedSeasons = (data?.mediaInfo?.requests ?? [])
+    .filter(
+      (request) =>
+        request.status !== MediaRequestStatus.DECLINED &&
+        (!request.is4k || has4kAccess)
+    )
+    .flatMap((request) =>
+      (request.seasons ?? []).map((season) => season.seasonNumber)
+    );
+
+  const availableSeasons = Array.from(
+    new Set([...scannedSeasons, ...requestedSeasons])
+  ).sort((a, b) => a - b);
 
   const isAvailable =
     data?.mediaInfo?.status === MediaStatus.AVAILABLE ||

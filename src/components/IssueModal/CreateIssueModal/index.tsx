@@ -131,7 +131,14 @@ const CreateIssueModal = ({
       data?.mediaInfo?.status === MediaStatus.PROCESSING ||
       (has4kAccess &&
         (data?.mediaInfo?.status4k === MediaStatus.PENDING ||
-          data?.mediaInfo?.status4k === MediaStatus.PROCESSING)));
+          data?.mediaInfo?.status4k === MediaStatus.PROCESSING)) ||
+      // A failed request leaves the media at UNKNOWN; it is still a request
+      // problem the requester should be able to report.
+      (data?.mediaInfo?.requests ?? []).some(
+        (request) =>
+          request.status === MediaRequestStatus.FAILED &&
+          (!request.is4k || has4kAccess)
+      ));
 
   const availableIssueOptions = issueOptions.filter((option) =>
     isRequestedOnly

@@ -691,6 +691,11 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
             data.mediaInfo?.status === MediaStatus.PARTIALLY_AVAILABLE ||
             data.mediaInfo?.status === MediaStatus.PROCESSING ||
             data.mediaInfo?.status === MediaStatus.PENDING ||
+            // A request that failed to reach Sonarr leaves the media at
+            // UNKNOWN, which would otherwise hide the button entirely.
+            data.mediaInfo?.requests?.some(
+              (request) => request.status === MediaRequestStatus.FAILED
+            ) ||
             (settings.currentSettings.series4kEnabled &&
               hasPermission([Permission.REQUEST_4K, Permission.REQUEST_4K_TV], {
                 type: 'or',

@@ -50,7 +50,11 @@ import {
 } from '@heroicons/react/24/solid';
 import { type RatingResponse } from '@server/api/ratings';
 import { IssueStatus } from '@server/constants/issue';
-import { MediaStatus, MediaType } from '@server/constants/media';
+import {
+  MediaRequestStatus,
+  MediaStatus,
+  MediaType,
+} from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
 import type { MovieDetails as MovieDetailsType } from '@server/models/Movie';
 import axios from 'axios';
@@ -632,6 +636,11 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
           {(data.mediaInfo?.status === MediaStatus.AVAILABLE ||
             data.mediaInfo?.status === MediaStatus.PROCESSING ||
             data.mediaInfo?.status === MediaStatus.PENDING ||
+            // A request that failed to reach Radarr leaves the media at
+            // UNKNOWN, which would otherwise hide the button entirely.
+            data.mediaInfo?.requests?.some(
+              (request) => request.status === MediaRequestStatus.FAILED
+            ) ||
             (settings.currentSettings.movie4kEnabled &&
               hasPermission(
                 [Permission.REQUEST_4K, Permission.REQUEST_4K_MOVIE],
